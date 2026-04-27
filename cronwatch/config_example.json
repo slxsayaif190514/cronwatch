@@ -1,0 +1,36 @@
+{
+  "check_interval_seconds": 60,
+  "state_file": "/var/lib/cronwatch/state.json",
+  "log_file": "/var/log/cronwatch/cronwatch.log",
+  "alerts": {
+    "email": "ops@example.com",
+    "webhook_url": "https://hooks.example.com/cronwatch",
+    "slack_channel": "#alerts"
+  },
+  "jobs": [
+    {
+      "name": "daily-backup",
+      "schedule": "0 2 * * *",
+      "max_delay_seconds": 600,
+      "alert_on_failure": true,
+      "alert_on_delay": true,
+      "tags": ["backup", "critical"]
+    },
+    {
+      "name": "hourly-sync",
+      "schedule": "0 * * * *",
+      "max_delay_seconds": 120,
+      "alert_on_failure": true,
+      "alert_on_delay": false,
+      "tags": ["sync"]
+    },
+    {
+      "name": "cleanup-tmp",
+      "schedule": "30 3 * * 0",
+      "max_delay_seconds": 1800,
+      "alert_on_failure": false,
+      "alert_on_delay": false,
+      "tags": ["maintenance"]
+    }
+  ]
+}
