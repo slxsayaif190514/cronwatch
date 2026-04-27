@@ -1,36 +1,43 @@
 {
-  "check_interval_seconds": 60,
-  "state_file": "/var/lib/cronwatch/state.json",
-  "log_file": "/var/log/cronwatch/cronwatch.log",
-  "alerts": {
-    "email": "ops@example.com",
-    "webhook_url": "https://hooks.example.com/cronwatch",
-    "slack_channel": "#alerts"
-  },
   "jobs": [
     {
-      "name": "daily-backup",
+      "name": "nightly-backup",
       "schedule": "0 2 * * *",
-      "max_delay_seconds": 600,
-      "alert_on_failure": true,
-      "alert_on_delay": true,
-      "tags": ["backup", "critical"]
+      "grace_period_seconds": 300,
+      "alert_cooldown_seconds": 3600
     },
     {
       "name": "hourly-sync",
       "schedule": "0 * * * *",
-      "max_delay_seconds": 120,
-      "alert_on_failure": true,
-      "alert_on_delay": false,
-      "tags": ["sync"]
+      "grace_period_seconds": 120,
+      "alert_cooldown_seconds": 1800
     },
     {
-      "name": "cleanup-tmp",
-      "schedule": "30 3 * * 0",
-      "max_delay_seconds": 1800,
-      "alert_on_failure": false,
-      "alert_on_delay": false,
-      "tags": ["maintenance"]
+      "name": "every-minute-health",
+      "schedule": "* * * * *",
+      "grace_period_seconds": 30,
+      "alert_cooldown_seconds": 300
     }
-  ]
+  ],
+  "alerts": {
+    "email": {
+      "enabled": true,
+      "smtp_host": "smtp.example.com",
+      "smtp_port": 587,
+      "from_address": "cronwatch@example.com",
+      "to_addresses": ["ops@example.com"]
+    },
+    "webhook": {
+      "enabled": false,
+      "url": "https://hooks.example.com/cronwatch"
+    }
+  },
+  "retention": {
+    "max_age_days": 30
+  },
+  "state_file": "/var/lib/cronwatch/state.json",
+  "history_file": "/var/lib/cronwatch/history.json",
+  "digest_file": "/var/lib/cronwatch/digest.json",
+  "check_interval_seconds": 60,
+  "log_level": "INFO"
 }
