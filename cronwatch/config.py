@@ -35,7 +35,13 @@ def load_config(path: str) -> Config:
         raise FileNotFoundError(f"Config file not found: {path}")
 
     with open(path, "r") as f:
-        raw = json.load(f)
+        try:
+            raw = json.load(f)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON in config file '{path}': {e}") from e
+
+    if not isinstance(raw, dict):
+        raise ValueError(f"Config file '{path}' must contain a JSON object at the top level")
 
     jobs = [
         JobConfig(
