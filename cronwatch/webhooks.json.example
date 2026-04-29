@@ -1,0 +1,25 @@
+{
+  "webhooks": [
+    {
+      "name": "slack-alerts",
+      "url": "https://hooks.slack.com/services/T000/B000/xxxx",
+      "secret": null,
+      "timeout": 10,
+      "enabled": true
+    },
+    {
+      "name": "pagerduty",
+      "url": "https://events.pagerduty.com/v2/enqueue",
+      "secret": "your-routing-key",
+      "timeout": 15,
+      "enabled": true
+    },
+    {
+      "name": "teams-channel",
+      "url": "https://outlook.office.com/webhook/xxx/IncomingWebhook/yyy",
+      "secret": null,
+      "timeout": 10,
+      "enabled": false
+    }
+  ]
+}
