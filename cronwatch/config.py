@@ -1,71 +1,61 @@
-import os
+"""Configuration loading and dataclasses for cronwatch."""
+
+from __future__ import annotations
+
 import json
 from dataclasses import dataclass, field
-from typing import List, Optional
-
-
-@dataclass
-class JobConfig:
-    name: str
-    schedule: str  # cron expression e.g. "*/5 * * * *"
-    max_delay_seconds: int = 300
-    alert_on_failure: bool = True
-    alert_on_delay: bool = True
-    tags: List[str] = field(default_factory=list)
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
 class AlertConfig:
     email: Optional[str] = None
-    webhook_url: Optional[str] = None
-    slack_channel: Optional[str] = None
+    webhook: Optional[str] = None
+    cooldown_minutes: int = 30
+
+
+@dataclass
+class JobConfig:
+    name: str
+    schedule: str
+    grace_minutes: int = 5
+    tags: List[str] = field(default_factory=list)
+    alert: Optional[AlertConfig] = None
 
 
 @dataclass
 class Config:
     jobs: List[JobConfig] = field(default_factory=list)
-    alerts: AlertConfig = field(default_factory=AlertConfig)
-    check_interval_seconds: int = 60
-    state_file: str = "/var/lib/cronwatch/state.json"
-    log_file: str = "/var/log/cronwatch/cronwatch.log"
+    alert: Optional[AlertConfig] = None
+    state_dir: str = "/tmp/cronwatch"
+
+
+def _parse_alert(data: Dict[str, Any]) -> AlertConfig:
+    return AlertConfig(
+        email=data.get("email"),
+        webhook=data.get("webhook"),
+        cooldown_minutes=int(data.get("cooldown_minutes", 30)),
+    )
+
+
+def _parse_job(data: Dict[str, Any]) -> JobConfig:
+    alert_data = data.get("alert")
+    return JobConfig(
+        name=data["name"],
+        schedule=data["schedule"],
+        grace_minutes=int(data.get("grace_minutes", 5)),
+        tags=list(data.get("tags", [])),
+        alert=_parse_alert(alert_data) if alert_data else None,
+    )
 
 
 def load_config(path: str) -> Config:
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"Config file not found: {path}")
+    with open(path) as fh:
+        raw = json.load(fh)
 
-    with open(path, "r") as f:
-        try:
-            raw = json.load(f)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON in config file '{path}': {e}") from e
-
-    if not isinstance(raw, dict):
-        raise ValueError(f"Config file '{path}' must contain a JSON object at the top level")
-
-    jobs = [
-        JobConfig(
-            name=j["name"],
-            schedule=j["schedule"],
-            max_delay_seconds=j.get("max_delay_seconds", 300),
-            alert_on_failure=j.get("alert_on_failure", True),
-            alert_on_delay=j.get("alert_on_delay", True),
-            tags=j.get("tags", []),
-        )
-        for j in raw.get("jobs", [])
-    ]
-
-    alert_raw = raw.get("alerts", {})
-    alerts = AlertConfig(
-        email=alert_raw.get("email"),
-        webhook_url=alert_raw.get("webhook_url"),
-        slack_channel=alert_raw.get("slack_channel"),
-    )
-
+    alert_data = raw.get("alert")
     return Config(
-        jobs=jobs,
-        alerts=alerts,
-        check_interval_seconds=raw.get("check_interval_seconds", 60),
-        state_file=raw.get("state_file", "/var/lib/cronwatch/state.json"),
-        log_file=raw.get("log_file", "/var/log/cronwatch/cronwatch.log"),
+        jobs=[_parse_job(j) for j in raw.get("jobs", [])],
+        alert=_parse_alert(alert_data) if alert_data else None,
+        state_dir=raw.get("state_dir", "/tmp/cronwatch"),
     )
