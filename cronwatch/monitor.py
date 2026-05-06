@@ -46,6 +46,17 @@ def run_checks(config: Config, tracker: JobTracker, now: Optional[datetime] = No
 
 
 def _should_alert(state, now: datetime, cooldown_minutes: Optional[int]) -> bool:
+    """Return True if enough time has passed since the last alert for this job.
+
+    Args:
+        state: The current job state, used to retrieve the last alert timestamp.
+        now: The current UTC datetime.
+        cooldown_minutes: How many minutes must elapse before re-alerting.
+            Falls back to DEFAULT_ALERT_COOLDOWN_MINUTES if None or zero.
+
+    Returns:
+        True if no alert has been sent yet, or the cooldown period has elapsed.
+    """
     cooldown = timedelta(minutes=cooldown_minutes or DEFAULT_ALERT_COOLDOWN_MINUTES)
     last_alert = state.last_alert_sent_dt()
     if last_alert is None:
