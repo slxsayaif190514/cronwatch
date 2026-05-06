@@ -59,10 +59,24 @@ class SnapshotStore:
         return snap
 
     def load(self) -> Optional[Snapshot]:
+        """Load the snapshot from disk, returning None if it doesn't exist.
+
+        Raises ``ValueError`` if the file exists but contains invalid JSON or
+        is missing the required ``captured_at`` field.
+        """
         if not os.path.exists(self._path):
             return None
         with open(self._path) as fh:
-            data = json.load(fh)
+            try:
+                data = json.load(fh)
+            except json.JSONDecodeError as exc:
+                raise ValueError(
+                    f"Snapshot file {self._path!r} contains invalid JSON"
+                ) from exc
+        if "captured_at" not in data:
+            raise ValueError(
+                f"Snapshot file {self._path!r} is missing 'captured_at' field"
+            )
         return Snapshot(
             captured_at=data["captured_at"],
             jobs=data.get("jobs", []),
