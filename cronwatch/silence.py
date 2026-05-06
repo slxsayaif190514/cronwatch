@@ -58,9 +58,12 @@ class SilenceStore:
     def _load(self) -> None:
         if not os.path.exists(self._path):
             return
-        with open(self._path) as f:
-            raw = json.load(f)
-        self._windows = [SilenceWindow.from_dict(d) for d in raw]
+        try:
+            with open(self._path) as f:
+                raw = json.load(f)
+            self._windows = [SilenceWindow.from_dict(d) for d in raw]
+        except (json.JSONDecodeError, KeyError, ValueError) as e:
+            raise ValueError(f"Failed to load silence store from {self._path!r}: {e}") from e
 
     def _save(self) -> None:
         with open(self._path, "w") as f:
@@ -85,3 +88,7 @@ class SilenceStore:
 
     def all_windows(self) -> List[SilenceWindow]:
         return list(self._windows)
+
+    def windows_for_job(self, job_name: str) -> List[SilenceWindow]:
+        """Return all silence windows (active or not) associated with a specific job."""
+        return [w for w in self._windows if w.job_name == job_name]
