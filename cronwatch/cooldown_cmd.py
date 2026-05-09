@@ -31,10 +31,17 @@ def cmd_show(args: argparse.Namespace) -> None:
 def cmd_reset(args: argparse.Namespace) -> None:
     store = _get_store(args)
     if args.job:
+        if args.job not in store.all_jobs():
+            print(f"Error: no cooldown record found for job: {args.job}", file=sys.stderr)
+            sys.exit(1)
         store.reset(args.job)
         print(f"Cooldown reset for job: {args.job}")
     else:
-        for job in store.all_jobs():
+        jobs = store.all_jobs()
+        if not jobs:
+            print("No cooldown records to clear.")
+            return
+        for job in jobs:
             store.reset(job)
         print("All cooldown records cleared.")
 
