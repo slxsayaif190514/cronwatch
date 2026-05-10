@@ -26,21 +26,28 @@ def cmd_show(args: argparse.Namespace) -> None:
     for job in sorted(jobs):
         entry = store.get_entry(job)
         if entry is None:
-            print(f"{job:<30} {'—':>6}  {'—':<28} {'—':<28}")
+            print(f"{job:<30} {'\u2014':>6}  {'\u2014':<28} {'\u2014':<28}")
         else:
-            last = entry.last_alert.isoformat() if entry.last_alert else "—"
+            last = entry.last_alert.isoformat() if entry.last_alert else "\u2014"
             print(f"{job:<30} {entry.count:>6}  {entry.window_start.isoformat():<28} {last:<28}")
 
 
 def cmd_reset(args: argparse.Namespace) -> None:
     store = _get_store(args.file)
     if args.job:
+        if store.get_entry(args.job) is None:
+            print(f"No throttle entry found for job: {args.job}", file=sys.stderr)
+            sys.exit(1)
         store.reset(args.job)
         print(f"Throttle reset for job: {args.job}")
     else:
-        for job in list(store._data.keys()):
+        jobs = list(store._data.keys())
+        if not jobs:
+            print("No throttle entries to clear.")
+            return
+        for job in jobs:
             store.reset(job)
-        print("All throttle entries cleared.")
+        print(f"All throttle entries cleared ({len(jobs)} job(s)).")
 
 
 def build_parser() -> argparse.ArgumentParser:
